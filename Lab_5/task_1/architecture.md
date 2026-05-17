@@ -114,9 +114,129 @@ ER-диаграмма вынесена в файл [`er_diagram.mmd`](er_diagram
 
 ```mermaid
 erDiagram
+    USERS {
+        integer user_id PK
+        datetime created_at
+    }
+
+    MOVIES {
+        integer movie_id PK
+        integer tmdb_id UK
+        text imdb_id
+        text title
+        text original_title
+        text overview
+        text original_language
+        date release_date
+        real runtime
+        integer budget
+        integer revenue
+        real popularity
+        real vote_average
+        integer vote_count
+        boolean adult
+        boolean video
+        text status
+        text homepage
+        text poster_path
+        text tagline
+        integer collection_id FK
+    }
+
+    RATINGS {
+        integer rating_id PK
+        integer user_id FK
+        integer movie_id FK
+        real rating
+        datetime rated_at
+    }
+
+    COLLECTIONS {
+        integer collection_id PK
+        text name
+        text poster_path
+        text backdrop_path
+    }
+
+    GENRES {
+        integer genre_id PK
+        text name
+    }
+
+    MOVIE_GENRES {
+        integer movie_id PK, FK
+        integer genre_id PK, FK
+    }
+
+    KEYWORDS {
+        integer keyword_id PK
+        text name
+    }
+
+    MOVIE_KEYWORDS {
+        integer movie_id PK, FK
+        integer keyword_id PK, FK
+    }
+
+    PEOPLE {
+        integer person_id PK
+        text name
+        integer gender
+    }
+
+    MOVIE_CAST {
+        integer movie_id PK, FK
+        integer person_id PK, FK
+        text character_name
+        integer cast_order
+    }
+
+    MOVIE_CREW {
+        integer movie_id PK, FK
+        integer person_id PK, FK
+        text department
+        text job
+    }
+
+    PRODUCTION_COMPANIES {
+        integer company_id PK
+        text name
+    }
+
+    MOVIE_PRODUCTION_COMPANIES {
+        integer movie_id PK, FK
+        integer company_id PK, FK
+    }
+
+    PRODUCTION_COUNTRIES {
+        text country_code PK
+        text name
+    }
+
+    MOVIE_PRODUCTION_COUNTRIES {
+        integer movie_id PK, FK
+        text country_code PK, FK
+    }
+
+    SPOKEN_LANGUAGES {
+        text language_code PK
+        text name
+    }
+
+    MOVIE_SPOKEN_LANGUAGES {
+        integer movie_id PK, FK
+        text language_code PK, FK
+    }
+
+    CONTENT_FEATURES {
+        integer movie_id PK, FK
+        text feature_text
+        datetime updated_at
+    }
+
     USERS ||--o{ RATINGS : rates
     MOVIES ||--o{ RATINGS : receives
-    MOVIES }o--|| COLLECTIONS : belongs_to
+    COLLECTIONS ||--o{ MOVIES : groups
     MOVIES ||--o{ MOVIE_GENRES : has
     GENRES ||--o{ MOVIE_GENRES : describes
     MOVIES ||--o{ MOVIE_KEYWORDS : has
@@ -125,7 +245,13 @@ erDiagram
     PEOPLE ||--o{ MOVIE_CAST : acts_in
     MOVIES ||--o{ MOVIE_CREW : made_by
     PEOPLE ||--o{ MOVIE_CREW : works_on
-    MOVIES ||--o| CONTENT_FEATURES : generates
+    MOVIES ||--o{ MOVIE_PRODUCTION_COMPANIES : produced_by
+    PRODUCTION_COMPANIES ||--o{ MOVIE_PRODUCTION_COMPANIES : produces
+    MOVIES ||--o{ MOVIE_PRODUCTION_COUNTRIES : made_in
+    PRODUCTION_COUNTRIES ||--o{ MOVIE_PRODUCTION_COUNTRIES : country
+    MOVIES ||--o{ MOVIE_SPOKEN_LANGUAGES : has_language
+    SPOKEN_LANGUAGES ||--o{ MOVIE_SPOKEN_LANGUAGES : language
+    MOVIES ||--o| CONTENT_FEATURES : has_features
 ```
 
 ## 5. Обоснование структуры
@@ -147,4 +273,3 @@ erDiagram
 | Hybrid Methods | `ratings` + `content_features` + справочники признаков |
 | Cold Start для нового фильма | `movies`, `genres`, `keywords`, `people`, `content_features` |
 | Cold Start для нового пользователя | популярные фильмы из `ratings`, жанровые предпочтения, первичный опрос |
-
