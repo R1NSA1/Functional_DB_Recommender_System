@@ -16,13 +16,39 @@
       "mae": 0.68667258234394,
       "test_size": 19962.0
     },
-    "content_based": {
+    "full_catalog_content_based": {
       "hit_rate_at_10": 0.02,
       "evaluated_users": 50.0
     },
-    "hybrid": {
+    "full_catalog_hybrid": {
       "hit_rate_at_10": 0.06,
       "evaluated_users": 50.0
+    },
+    "sampled_topn": {
+      "content_based": {
+        "hit_rate_at_10": 0.32,
+        "precision_at_10": 0.032,
+        "recall_at_10": 0.32,
+        "ndcg_at_10": 0.1658077063279859,
+        "evaluated_users": 100.0,
+        "negative_samples": 100.0
+      },
+      "collaborative": {
+        "hit_rate_at_10": 0.14,
+        "precision_at_10": 0.014000000000000002,
+        "recall_at_10": 0.14,
+        "ndcg_at_10": 0.06736900672011785,
+        "evaluated_users": 100.0,
+        "negative_samples": 100.0
+      },
+      "hybrid": {
+        "hit_rate_at_10": 0.33,
+        "precision_at_10": 0.033,
+        "recall_at_10": 0.33,
+        "ndcg_at_10": 0.17088566617039092,
+        "evaluated_users": 100.0,
+        "negative_samples": 100.0
+      }
     }
   },
   "recommendations": {

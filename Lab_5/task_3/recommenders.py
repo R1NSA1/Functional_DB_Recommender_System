@@ -290,6 +290,111 @@ def evaluate_profile_recommender(
     }
 
 
+def _ndcg_for_rank(rank: int | None) -> float:
+    if rank is None:
+        return 0.0
+    return 1.0 / np.log2(rank + 1)
+
+
+def evaluate_sampled_topn(
+    content: ContentBasedRecommender,
+    collaborative: CollaborativeRecommender,
+    ratings: pd.DataFrame,
+    candidates: pd.DataFrame,
+    sample_users: int = 100,
+    negative_samples: int = 100,
+    top_n: int = 10,
+    alpha: float = 0.6,
+) -> dict[str, dict[str, float]]:
+    eligible = []
+    candidate_ids = set(candidates["movie_id"].astype(int))
+    all_candidate_ids = np.array(sorted(candidate_ids))
+
+    for user_id, group in ratings.groupby("user_id"):
+        liked = [movie_id for movie_id in group.loc[group["rating"] >= 4.0, "movie_id"].astype(int) if movie_id in candidate_ids]
+        if len(group) >= 10 and len(liked) >= 2:
+            eligible.append((int(user_id), liked, set(group["movie_id"].astype(int))))
+
+    rng = np.random.default_rng(42)
+    selected = rng.choice(len(eligible), size=min(sample_users, len(eligible)), replace=False)
+    selected_cases = []
+    for index in selected:
+        user_id, liked, rated_ids = eligible[int(index)]
+        hidden_movie_id = liked[0]
+        profile_ids = liked[1:]
+        negative_pool = [movie_id for movie_id in all_candidate_ids if movie_id not in rated_ids and movie_id != hidden_movie_id]
+        if len(negative_pool) < negative_samples:
+            sampled_negatives = negative_pool
+        else:
+            sampled_negatives = rng.choice(negative_pool, size=negative_samples, replace=False).astype(int).tolist()
+        eval_ids = sampled_negatives + [hidden_movie_id]
+        selected_cases.append((user_id, hidden_movie_id, profile_ids, eval_ids))
+
+    hidden_pairs = {(user_id, hidden_movie_id) for user_id, hidden_movie_id, _profile_ids, _eval_ids in selected_cases}
+    train_ratings = ratings[
+        ~ratings.apply(lambda row: (int(row["user_id"]), int(row["movie_id"])) in hidden_pairs, axis=1)
+    ].copy()
+    eval_collaborative = CollaborativeRecommender.fit(train_ratings)
+
+    metrics = {
+        "content_based": {"hits": 0.0, "ndcg": 0.0, "evaluated": 0.0},
+        "collaborative": {"hits": 0.0, "ndcg": 0.0, "evaluated": 0.0},
+        "hybrid": {"hits": 0.0, "ndcg": 0.0, "evaluated": 0.0},
+    }
+
+    for user_id, hidden_movie_id, profile_ids, eval_ids in selected_cases:
+        content_series = content.user_profile_scores(profile_ids)
+        if content_series.empty:
+            continue
+
+        rows = []
+        for movie_id in eval_ids:
+            rows.append(
+                {
+                    "movie_id": int(movie_id),
+                    "content_score": float(content_series.get(int(movie_id), 0.0)),
+                    "predicted_rating": eval_collaborative.model.predict(user_id, int(movie_id)).est,
+                }
+            )
+        score_df = pd.DataFrame(rows)
+        if score_df.empty:
+            continue
+
+        score_df[["cf_norm", "content_norm"]] = MinMaxScaler().fit_transform(
+            score_df[["predicted_rating", "content_score"]]
+        )
+        score_df["hybrid_score"] = alpha * score_df["cf_norm"] + (1 - alpha) * score_df["content_norm"]
+
+        rankings = {
+            "content_based": score_df.sort_values("content_score", ascending=False)["movie_id"].astype(int).tolist(),
+            "collaborative": score_df.sort_values("predicted_rating", ascending=False)["movie_id"].astype(int).tolist(),
+            "hybrid": score_df.sort_values("hybrid_score", ascending=False)["movie_id"].astype(int).tolist(),
+        }
+
+        for method, ranked_ids in rankings.items():
+            metrics[method]["evaluated"] += 1
+            try:
+                rank = ranked_ids.index(hidden_movie_id) + 1
+            except ValueError:
+                rank = None
+            hit = rank is not None and rank <= top_n
+            metrics[method]["hits"] += float(hit)
+            metrics[method]["ndcg"] += _ndcg_for_rank(rank if hit else None)
+
+    result: dict[str, dict[str, float]] = {}
+    for method, values in metrics.items():
+        evaluated = values["evaluated"] or 1.0
+        result[method] = {
+            f"hit_rate_at_{top_n}": values["hits"] / evaluated,
+            f"precision_at_{top_n}": values["hits"] / evaluated / top_n,
+            f"recall_at_{top_n}": values["hits"] / evaluated,
+            f"ndcg_at_{top_n}": values["ndcg"] / evaluated,
+            "evaluated_users": values["evaluated"],
+            "negative_samples": float(negative_samples),
+        }
+    return result
+
+
 def build_demo(database_url: str, user_id: int, seed_movie_id: int, top_n: int) -> dict[str, Any]:
     with connect(database_url) as con:
         movies = load_movies(con)
@@ -313,6 +418,16 @@ def build_demo(database_url: str, user_id: int, seed_movie_id: int, top_n: int) 
         candidates=candidates,
         top_n=top_n,
     )
+    sampled_topn_metrics = evaluate_sampled_topn(
+        content,
+        collaborative,
+        ratings,
+        candidates,
+        sample_users=100,
+        negative_samples=100,
+        top_n=top_n,
+        alpha=hybrid.alpha,
+    )
 
     return {
         "dataset": {
@@ -324,8 +439,9 @@ def build_demo(database_url: str, user_id: int, seed_movie_id: int, top_n: int) 
         "parameters": {"user_id": user_id, "seed_movie_id": seed_movie_id, "top_n": top_n},
         "metrics": {
             "collaborative": collaborative_metrics,
-            "content_based": content_metrics,
-            "hybrid": hybrid_metrics,
+            "full_catalog_content_based": content_metrics,
+            "full_catalog_hybrid": hybrid_metrics,
+            "sampled_topn": sampled_topn_metrics,
         },
         "recommendations": {
             "content_based": content_recs.to_dict(orient="records"),
