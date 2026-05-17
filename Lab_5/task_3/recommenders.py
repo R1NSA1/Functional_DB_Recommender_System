@@ -55,13 +55,33 @@ def load_movies(con: psycopg.Connection) -> pd.DataFrame:
     return query_df(con, query)
 
 
-def load_ratings(con: psycopg.Connection) -> pd.DataFrame:
+def load_ratings(
+    con: psycopg.Connection,
+    max_users: int = 5_000,
+    min_user_ratings: int = 20,
+    include_user_id: int | None = None,
+) -> pd.DataFrame:
     query = """
-        SELECT user_id, movie_id, rating
-        FROM ratings
-        ORDER BY user_id, movie_id
+        WITH active_users AS (
+            SELECT user_id
+            FROM ratings
+            GROUP BY user_id
+            HAVING COUNT(*) >= %s
+            ORDER BY md5(user_id::text)
+            LIMIT %s
+        ),
+        selected_users AS (
+            SELECT user_id FROM active_users
+            UNION
+            SELECT %s::integer AS user_id
+            WHERE %s IS NOT NULL
+        )
+        SELECT r.user_id, r.movie_id, r.rating
+        FROM ratings r
+        JOIN selected_users su ON su.user_id = r.user_id
+        ORDER BY r.user_id, r.movie_id
     """
-    return query_df(con, query)
+    return query_df(con, query, params=(min_user_ratings, max_users, include_user_id, include_user_id))
 
 
 def load_popular_candidates(con: psycopg.Connection, min_ratings: int = 20) -> pd.DataFrame:
@@ -211,7 +231,7 @@ class CollaborativeRecommender:
 class HybridRecommender:
     content: ContentBasedRecommender
     collaborative: CollaborativeRecommender
-    alpha: float = 0.2
+    alpha: float = 0.8
 
     def recommend_for_user(
         self,
@@ -325,7 +345,7 @@ def evaluate_sampled_topn(
     sample_users: int = 100,
     negative_samples: int = 100,
     top_n: int = 10,
-    alpha: float = 0.2,
+    alpha: float = 0.8,
 ) -> dict[str, dict[str, float]]:
     eligible = []
     candidate_ids = set(candidates["movie_id"].astype(int))
@@ -425,16 +445,22 @@ def evaluate_sampled_topn(
     return result
 
 
-def build_demo(database_url: str, user_id: int, seed_movie_id: int, top_n: int) -> dict[str, Any]:
+def build_demo(
+    database_url: str,
+    user_id: int,
+    seed_movie_id: int,
+    top_n: int,
+    max_users: int = 5_000,
+) -> dict[str, Any]:
     with connect(database_url) as con:
         movies = load_movies(con)
-        ratings = load_ratings(con)
+        ratings = load_ratings(con, max_users=max_users, include_user_id=user_id)
         candidates = load_popular_candidates(con, min_ratings=20)
 
     content = ContentBasedRecommender.fit(movies)
     collaborative_metrics = CollaborativeRecommender.evaluate(ratings)
     collaborative = CollaborativeRecommender.fit(ratings)
-    hybrid = HybridRecommender(content, collaborative, alpha=0.2)
+    hybrid = HybridRecommender(content, collaborative, alpha=0.8)
 
     content_recs = content.similar_movies(seed_movie_id, top_n=top_n)
     collaborative_recs = collaborative.recommend_for_user(user_id, movies, candidates, top_n=top_n)
@@ -465,6 +491,7 @@ def build_demo(database_url: str, user_id: int, seed_movie_id: int, top_n: int) 
             "ratings": int(len(ratings)),
             "users": int(ratings["user_id"].nunique()),
             "candidates_with_20_ratings": int(len(candidates)),
+            "rating_sample_max_users": int(max_users),
         },
         "parameters": {"user_id": user_id, "seed_movie_id": seed_movie_id, "top_n": top_n},
         "metrics": {
@@ -487,12 +514,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--user-id", type=int, default=15)
     parser.add_argument("--seed-movie-id", type=int, default=318)
     parser.add_argument("--top-n", type=int, default=10)
+    parser.add_argument("--max-users", type=int, default=5_000)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    result = build_demo(args.database_url, args.user_id, args.seed_movie_id, args.top_n)
+    result = build_demo(args.database_url, args.user_id, args.seed_movie_id, args.top_n, args.max_users)
     print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
 
 

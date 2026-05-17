@@ -183,7 +183,8 @@ def load_source_frames(links_kind: str) -> tuple[pd.DataFrame, pd.DataFrame, pd.
 
 def build_movie_frame(movies: pd.DataFrame, links: pd.DataFrame) -> pd.DataFrame:
     merged = links.merge(movies, on="tmdb_id", how="inner")
-    return merged.drop_duplicates(subset=["movie_id"])
+    merged = merged.drop_duplicates(subset=["movie_id"])
+    return merged.drop_duplicates(subset=["tmdb_id"])
 
 
 def load_collections(con: psycopg.Connection, movies: pd.DataFrame) -> int:
@@ -521,50 +522,83 @@ def load_users_and_ratings(
     con: psycopg.Connection, ratings_kind: str, valid_movie_ids: set[int]
 ) -> tuple[int, int, int]:
     ratings_name = "ratings_small.csv" if ratings_kind == "small" else "ratings.csv"
-    inserted_users: set[int] = set()
-    inserted_ratings = 0
-    skipped_ratings = 0
+    ratings_path = DATA_DIR / ratings_name
 
-    for chunk in pd.read_csv(DATA_DIR / ratings_name, chunksize=100_000):
-        source_count = len(chunk)
-        chunk["movieId"] = pd.to_numeric(chunk["movieId"], errors="coerce").astype("Int64")
-        chunk["userId"] = pd.to_numeric(chunk["userId"], errors="coerce").astype("Int64")
-        chunk["rating"] = pd.to_numeric(chunk["rating"], errors="coerce")
-        chunk = chunk.dropna(subset=["userId", "movieId", "rating", "timestamp"])
-        chunk = chunk[chunk["movieId"].isin(valid_movie_ids)]
-        skipped_ratings += source_count - len(chunk)
-
-        users = {(int(row.userId),) for row in chunk.itertuples(index=False)}
-        inserted_users.update(user_id for (user_id,) in users)
-        insert_many(
-            con,
+    with con.cursor() as cur:
+        cur.execute("DROP TABLE IF EXISTS tmp_ratings_raw")
+        cur.execute(
             """
-            INSERT INTO users (user_id)
-            VALUES (%s)
-            ON CONFLICT (user_id) DO NOTHING
-            """,
-            users,
+            CREATE TEMP TABLE tmp_ratings_raw (
+                user_id INTEGER,
+                movie_id INTEGER,
+                rating DOUBLE PRECISION,
+                raw_timestamp BIGINT
+            ) ON COMMIT DROP
+            """
         )
 
-        rating_rows = []
-        for row in chunk.itertuples(index=False):
-            rated_at = pd.to_datetime(int(row.timestamp), unit="s", utc=True).to_pydatetime()
-            rating_rows.append((int(row.userId), int(row.movieId), float(row.rating), rated_at))
+        with cur.copy(
+            """
+            COPY tmp_ratings_raw (user_id, movie_id, rating, raw_timestamp)
+            FROM STDIN WITH (FORMAT CSV, HEADER TRUE)
+            """
+        ) as copy:
+            with ratings_path.open("rb") as file:
+                while chunk := file.read(1024 * 1024):
+                    copy.write(chunk)
 
-        inserted_ratings += insert_many(
-            con,
+    with con.cursor() as cur:
+        cur.execute("SELECT COUNT(*) FROM tmp_ratings_raw")
+        source_count = cur.fetchone()[0]
+        cur.execute(
+            """
+            SELECT COUNT(*)
+            FROM tmp_ratings_raw r
+            JOIN movies m ON m.movie_id = r.movie_id
+            WHERE r.user_id IS NOT NULL
+              AND r.movie_id IS NOT NULL
+              AND r.rating IS NOT NULL
+              AND r.raw_timestamp IS NOT NULL
+            """
+        )
+        valid_count = cur.fetchone()[0]
+        cur.execute(
+            """
+            INSERT INTO users (user_id)
+            SELECT DISTINCT user_id
+            FROM tmp_ratings_raw r
+            JOIN movies m ON m.movie_id = r.movie_id
+            WHERE r.user_id IS NOT NULL
+              AND r.movie_id IS NOT NULL
+              AND r.rating IS NOT NULL
+              AND r.raw_timestamp IS NOT NULL
+            ON CONFLICT (user_id) DO NOTHING
+            """
+        )
+        inserted_users = cur.rowcount
+        cur.execute(
             """
             INSERT INTO ratings (user_id, movie_id, rating, rated_at)
-            VALUES (%s, %s, %s, %s)
+            SELECT
+                r.user_id,
+                r.movie_id,
+                r.rating,
+                to_timestamp(r.raw_timestamp)
+            FROM tmp_ratings_raw r
+            JOIN movies m ON m.movie_id = r.movie_id
+            WHERE r.user_id IS NOT NULL
+              AND r.movie_id IS NOT NULL
+              AND r.rating IS NOT NULL
+              AND r.raw_timestamp IS NOT NULL
             ON CONFLICT (user_id, movie_id) DO UPDATE SET
                 rating = EXCLUDED.rating,
                 rated_at = EXCLUDED.rated_at
-            """,
-            rating_rows,
+            """
         )
-        con.commit()
+        inserted_ratings = cur.rowcount
+    con.commit()
 
-    return len(inserted_users), inserted_ratings, skipped_ratings
+    return inserted_users, inserted_ratings, source_count - valid_count
 
 
 def table_counts(con: psycopg.Connection) -> dict[str, int]:

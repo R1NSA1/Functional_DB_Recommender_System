@@ -24,10 +24,10 @@
 
 | Объект | Количество |
 |---|---:|
-| Фильмы | 9082 |
-| Пользователи | 671 |
-| Рейтинги | 99810 |
-| Фильмы с `content_features` | 9082 |
+| Фильмы | 45433 |
+| Пользователи | 270883 |
+| Рейтинги | 25980597 |
+| Фильмы с `content_features` | 45433 |
 
 ## Реализация
 
@@ -87,12 +87,12 @@ CollaborativeRecommender.evaluate()
 Итоговая формула:
 
 ```text
-hybrid_score = 0.2 * collaborative_score + 0.8 * content_score
+hybrid_score = 0.8 * collaborative_score + 0.2 * content_score
 ```
 
 Перед объединением оба сигнала нормализуются через `MinMaxScaler`.
 
-Вес `alpha = 0.2` выбран по sampled top-N validation: на `ratings_small` контентный сигнал оказался стабильнее collaborative-сигнала, поэтому гибрид получает большую долю content-based компоненты.
+Вес `alpha = 0.8` выбран по sampled top-N validation на полной базе. После перехода с `ratings_small.csv` на полный `ratings.csv` collaborative-сигнал стал значительно сильнее, поэтому гибрид получает большую долю collaborative-компоненты.
 
 Метод в коде:
 
@@ -147,21 +147,21 @@ postgresql://postgres:1234@127.0.0.1:5433/recsys_lab5
 
 | Метод | Метрика | Значение |
 |---|---|---:|
-| Collaborative Filtering | RMSE mean | 0.8877 |
-| Collaborative Filtering | RMSE std | 0.0036 |
-| Collaborative Filtering | MAE mean | 0.6833 |
-| Collaborative Filtering | MAE std | 0.0023 |
+| Collaborative Filtering | RMSE mean | 0.8312 |
+| Collaborative Filtering | RMSE std | 0.0022 |
+| Collaborative Filtering | MAE mean | 0.6347 |
+| Collaborative Filtering | MAE std | 0.0016 |
 | Collaborative Filtering | folds | 5 |
 
 Результаты sampled top-N evaluation:
 
 | Метод | hit_rate@10 | precision@10 | recall@10 | ndcg@10 |
 |---|---:|---:|---:|---:|
-| Content-Based Filtering | 0.35 | 0.035 | 0.35 | 0.2113 |
-| Collaborative Filtering | 0.17 | 0.017 | 0.17 | 0.0814 |
-| Hybrid Method | 0.38 | 0.038 | 0.38 | 0.2236 |
+| Content-Based Filtering | 0.44 | 0.044 | 0.44 | 0.2646 |
+| Collaborative Filtering | 0.59 | 0.059 | 0.59 | 0.3514 |
+| Hybrid Method | 0.63 | 0.063 | 0.63 | 0.4123 |
 
-Также была проведена более строгая full-catalog проверка, где скрытый фильм ищется среди всех популярных кандидатов. На ней `hit_rate@10` составил 0.06 для content-based и 0.06 для hybrid. Эти значения ниже, потому что задача существенно сложнее: модель выбирает 10 фильмов из 1300 кандидатов, а не из 101.
+Также была проведена более строгая full-catalog проверка, где скрытый фильм ищется среди всех популярных кандидатов. На ней `hit_rate@10` составил 0.02 для content-based и 0.06 для hybrid. Эти значения ниже, потому что задача существенно сложнее: модель выбирает 10 фильмов из 16691 кандидата, а не из 101.
 
 Для hybrid-оценки скрытые рейтинги исключаются из обучающей выборки перед обучением SVD, чтобы не использовать тестовый ответ при ранжировании.
 
@@ -176,8 +176,11 @@ postgresql://postgres:1234@127.0.0.1:5433/recsys_lab5
 | `user_id` | 15 |
 | `seed_movie_id` | 318 |
 | `top_n` | 10 |
+| `max_users` | 5000 |
 
 `movie_id = 318` соответствует фильму `The Shawshank Redemption`.
+
+Для обучения collaborative и hybrid моделей используется воспроизводимая выборка из 5000 активных пользователей полной базы. В эту выборку принудительно добавляется демонстрационный пользователь `15`, чтобы персональные рекомендации строились на его реальной истории оценок.
 
 ### Пример результата
 
@@ -185,28 +188,28 @@ Content-based рекомендации для `The Shawshank Redemption`:
 
 | Фильм | Год | Content score |
 |---|---:|---:|
-| `Brubaker` | 1980 | 0.2688 |
-| `Cool Hand Luke` | 1967 | 0.1874 |
-| `Double Jeopardy` | 1999 | 0.1799 |
-| `No Escape` | 1994 | 0.1760 |
-| `Starred Up` | 2013 | 0.1715 |
+| `Girls in Prison` | 1994 | 0.2893 |
+| `Brubaker` | 1980 | 0.2781 |
+| `Lost for Life` | 2013 | 0.2635 |
+| `Brute Force` | 1947 | 0.2398 |
+| `Caged` | 1950 | 0.2382 |
 
 Collaborative рекомендации для пользователя `15`:
 
 | Фильм | Год | Predicted rating |
 |---|---:|---:|
-| `Breaking the Waves` | 1996 | 3.5135 |
-| `Cinema Paradiso` | 1988 | 3.4192 |
-| `The Professional` | 1981 | 3.3620 |
-| `Howl's Moving Castle` | 2004 | 3.3599 |
-| `It Happened One Night` | 1934 | 3.3142 |
+| `The Godfather` | 1972 | 4.8915 |
+| `A Clockwork Orange` | 1971 | 4.8908 |
+| `Brazil` | 1985 | 4.7560 |
+| `2001: A Space Odyssey` | 1968 | 4.7483 |
+| `Taxi Driver` | 1976 | 4.7455 |
 
 Hybrid рекомендации для пользователя `15`:
 
 | Фильм | Год | Hybrid score |
 |---|---:|---:|
-| `Live and Let Die` | 1973 | 0.9086 |
-| `Dial M for Murder` | 1954 | 0.8849 |
-| `Sabrina` | 1954 | 0.7941 |
-| `The Day the Earth Stood Still` | 1951 | 0.7262 |
-| `The Dead Zone` | 1983 | 0.7095 |
+| `The Godfather` | 1972 | 0.9430 |
+| `Taxi Driver` | 1976 | 0.8975 |
+| `A Clockwork Orange` | 1971 | 0.8865 |
+| `Brazil` | 1985 | 0.8843 |
+| `2001: A Space Odyssey` | 1968 | 0.8747 |

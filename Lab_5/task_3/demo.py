@@ -15,6 +15,7 @@ def main() -> None:
         user_id=15,
         seed_movie_id=318,
         top_n=10,
+        max_users=5_000,
     )
     OUTPUT_PATH.write_text(json.dumps(result, ensure_ascii=False, indent=2, default=str), encoding="utf-8")
     print(json.dumps(result, ensure_ascii=False, indent=2, default=str))
