@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 LAB_DIR = ROOT / "Lab_5"
 DATA_DIR = LAB_DIR / "datasets"
 SCHEMA_PATH = LAB_DIR / "task_2" / "schema_postgres.sql"
-DEFAULT_DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/recsys_lab5"
+DEFAULT_DATABASE_URL = "postgresql://postgres:1234@127.0.0.1:5433/recsys_lab5"
 
 
 DROP_TABLES = [
@@ -271,6 +271,7 @@ def load_named_relations(
     relation_table: str,
 ) -> tuple[int, int]:
     entities: dict[int, tuple[Any, ...]] = {}
+    entity_ids_by_name: dict[str, int] = {}
     relations: set[tuple[int, int]] = set()
     for row in movies[["movie_id", source_column]].itertuples(index=False):
         movie_id = safe_int(row.movie_id)
@@ -281,8 +282,9 @@ def load_named_relations(
             name = safe_text(item.get("name"))
             if entity_id is None or not name:
                 continue
-            entities[entity_id] = (entity_id, name)
-            relations.add((movie_id, entity_id))
+            canonical_id = entity_ids_by_name.setdefault(name, entity_id)
+            entities[canonical_id] = (canonical_id, name)
+            relations.add((movie_id, canonical_id))
 
     entity_count = insert_many(
         con,
@@ -370,6 +372,7 @@ def load_people_and_credits(
 
 def load_production_companies(con: psycopg.Connection, movies: pd.DataFrame) -> tuple[int, int]:
     companies: dict[int, tuple[Any, ...]] = {}
+    company_ids_by_name: dict[str, int] = {}
     relations: set[tuple[int, int]] = set()
     for row in movies[["movie_id", "production_companies"]].itertuples(index=False):
         movie_id = safe_int(row.movie_id)
@@ -380,8 +383,9 @@ def load_production_companies(con: psycopg.Connection, movies: pd.DataFrame) -> 
             name = safe_text(item.get("name"))
             if company_id is None or not name:
                 continue
-            companies[company_id] = (company_id, name)
-            relations.add((movie_id, company_id))
+            canonical_id = company_ids_by_name.setdefault(name, company_id)
+            companies[canonical_id] = (canonical_id, name)
+            relations.add((movie_id, canonical_id))
     return (
         insert_many(
             con,

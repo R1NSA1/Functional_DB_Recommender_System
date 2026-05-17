@@ -76,14 +76,14 @@ docker compose -f Lab_5\task_2\docker-compose.yml up -d
 Пример:
 
 ```powershell
-$env:DATABASE_URL="postgresql://postgres:postgres@localhost:5432/recsys_lab5"
+$env:DATABASE_URL="postgresql://postgres:1234@127.0.0.1:5433/recsys_lab5"
 .\.venv\Scripts\python.exe Lab_5\task_2\etl.py --recreate
 ```
 
-По умолчанию используется строка:
+В тестовом окружении использовалась строка:
 
 ```text
-postgresql://postgres:postgres@localhost:5432/recsys_lab5
+postgresql://postgres:1234@127.0.0.1:5433/recsys_lab5
 ```
 
 ## Результат тестовой загрузки
@@ -99,4 +99,30 @@ postgresql://postgres:postgres@localhost:5432/recsys_lab5
 3. CLI-интерфейс скрипта.
 4. Чтение CSV-файлов и сопоставление `movieId` с `tmdbId`.
 
-Для `links_small.csv` сопоставлено 9082 фильма с метаданными. Полная загрузка требует запущенный PostgreSQL-сервер и выполняется командой из раздела запуска.
+Для `links_small.csv` сопоставлено 9082 фильма с метаданными.
+
+Также при тестировании обнаружены дубли по названиям в `keywords.csv` и `production_companies` при разных исходных ID. В ETL добавлена канонизация по названию: если одно и то же название встречается с несколькими ID, выбирается один канонический ID, а связи many-to-many записываются на него.
+
+## Результат тестовой загрузки в PostgreSQL
+
+Тестовая загрузка выполнена на PostgreSQL `127.0.0.1:5433`, база `recsys_lab5`, источники `ratings_small.csv` и `links_small.csv`.
+
+Итоговые количества:
+
+| Таблица | Строк |
+|---|---:|
+| `movies` | 9082 |
+| `users` | 671 |
+| `ratings` | 99810 |
+| `genres` | 20 |
+| `movie_genres` | 22404 |
+| `keywords` | 12936 |
+| `movie_keywords` | 63501 |
+| `people` | 147599 |
+| `movie_cast` | 176695 |
+| `movie_crew` | 186245 |
+| `content_features` | 9082 |
+
+Из `ratings_small.csv` пропущено 194 рейтинга, потому что для них не нашлось сопоставленного фильма в загруженном каталоге.
+
+Контрольные SQL-запросы вынесены в [`validation_queries.sql`](validation_queries.sql).
