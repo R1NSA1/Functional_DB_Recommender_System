@@ -87,10 +87,12 @@ CollaborativeRecommender.evaluate()
 Итоговая формула:
 
 ```text
-hybrid_score = 0.6 * collaborative_score + 0.4 * content_score
+hybrid_score = 0.2 * collaborative_score + 0.8 * content_score
 ```
 
 Перед объединением оба сигнала нормализуются через `MinMaxScaler`.
+
+Вес `alpha = 0.2` выбран по sampled top-N validation: на `ratings_small` контентный сигнал оказался стабильнее collaborative-сигнала, поэтому гибрид получает большую долю content-based компоненты.
 
 Метод в коде:
 
@@ -145,19 +147,21 @@ postgresql://postgres:1234@127.0.0.1:5433/recsys_lab5
 
 | Метод | Метрика | Значение |
 |---|---|---:|
-| Collaborative Filtering | RMSE | 0.8902 |
-| Collaborative Filtering | MAE | 0.6867 |
-| Collaborative Filtering | test ratings | 19962 |
+| Collaborative Filtering | RMSE mean | 0.8877 |
+| Collaborative Filtering | RMSE std | 0.0036 |
+| Collaborative Filtering | MAE mean | 0.6833 |
+| Collaborative Filtering | MAE std | 0.0023 |
+| Collaborative Filtering | folds | 5 |
 
 Результаты sampled top-N evaluation:
 
 | Метод | hit_rate@10 | precision@10 | recall@10 | ndcg@10 |
 |---|---:|---:|---:|---:|
-| Content-Based Filtering | 0.32 | 0.032 | 0.32 | 0.1658 |
-| Collaborative Filtering | 0.14 | 0.014 | 0.14 | 0.0674 |
-| Hybrid Method | 0.33 | 0.033 | 0.33 | 0.1709 |
+| Content-Based Filtering | 0.35 | 0.035 | 0.35 | 0.2113 |
+| Collaborative Filtering | 0.17 | 0.017 | 0.17 | 0.0814 |
+| Hybrid Method | 0.38 | 0.038 | 0.38 | 0.2236 |
 
-Также была проведена более строгая full-catalog проверка, где скрытый фильм ищется среди всех популярных кандидатов. На ней `hit_rate@10` составил 0.02 для content-based и 0.06 для hybrid. Эти значения ниже, потому что задача существенно сложнее: модель выбирает 10 фильмов из 1300 кандидатов, а не из 101.
+Также была проведена более строгая full-catalog проверка, где скрытый фильм ищется среди всех популярных кандидатов. На ней `hit_rate@10` составил 0.06 для content-based и 0.06 для hybrid. Эти значения ниже, потому что задача существенно сложнее: модель выбирает 10 фильмов из 1300 кандидатов, а не из 101.
 
 Для hybrid-оценки скрытые рейтинги исключаются из обучающей выборки перед обучением SVD, чтобы не использовать тестовый ответ при ранжировании.
 
@@ -201,8 +205,8 @@ Hybrid рекомендации для пользователя `15`:
 
 | Фильм | Год | Hybrid score |
 |---|---:|---:|
-| `Dial M for Murder` | 1954 | 0.8683 |
-| `The Professional` | 1981 | 0.8009 |
-| `Sabrina` | 1954 | 0.7777 |
-| `Breaking the Waves` | 1996 | 0.7721 |
-| `Platoon` | 1986 | 0.7473 |
+| `Live and Let Die` | 1973 | 0.9086 |
+| `Dial M for Murder` | 1954 | 0.8849 |
+| `Sabrina` | 1954 | 0.7941 |
+| `The Day the Earth Stood Still` | 1951 | 0.7262 |
+| `The Dead Zone` | 1983 | 0.7095 |

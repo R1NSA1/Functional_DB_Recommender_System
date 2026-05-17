@@ -15,6 +15,14 @@ from sklearn.preprocessing import MinMaxScaler
 
 
 DEFAULT_DATABASE_URL = "postgresql://postgres:1234@127.0.0.1:5433/recsys_lab5"
+RANDOM_STATE = 42
+SVD_PARAMS = {
+    "n_factors": 80,
+    "n_epochs": 25,
+    "lr_all": 0.005,
+    "reg_all": 0.04,
+    "random_state": RANDOM_STATE,
+}
 
 
 def connect(database_url: str = DEFAULT_DATABASE_URL) -> psycopg.Connection:
@@ -78,6 +86,15 @@ def add_year(df: pd.DataFrame) -> pd.DataFrame:
     return result
 
 
+def remove_hidden_ratings(ratings: pd.DataFrame, hidden_pairs: set[tuple[int, int]]) -> pd.DataFrame:
+    if not hidden_pairs:
+        return ratings.copy()
+
+    hidden_df = pd.DataFrame(hidden_pairs, columns=["user_id", "movie_id"])
+    merged = ratings.merge(hidden_df.assign(_hidden=True), on=["user_id", "movie_id"], how="left")
+    return merged[merged["_hidden"].isna()].drop(columns="_hidden").copy()
+
+
 @dataclass
 class ContentBasedRecommender:
     movies: pd.DataFrame
@@ -109,7 +126,11 @@ class ContentBasedRecommender:
         ].reset_index(drop=True)
 
     def user_profile_scores(self, liked_movie_ids: list[int]) -> pd.Series:
-        indices = [int(self.movie_indices.loc[movie_id]) for movie_id in liked_movie_ids if movie_id in self.movie_indices.index]
+        indices = [
+            int(self.movie_indices.loc[movie_id])
+            for movie_id in liked_movie_ids
+            if movie_id in self.movie_indices.index
+        ]
         if not indices:
             return pd.Series(dtype=float)
 
@@ -148,25 +169,25 @@ class CollaborativeRecommender:
         reader = Reader(rating_scale=(0.5, 5.0))
         data = Dataset.load_from_df(ratings[["user_id", "movie_id", "rating"]], reader)
         trainset = data.build_full_trainset()
-        model = SVD(n_factors=80, n_epochs=25, lr_all=0.005, reg_all=0.04, random_state=42)
+        model = SVD(**SVD_PARAMS)
         model.fit(trainset)
         return cls(ratings=ratings.copy(), model=model)
 
     @staticmethod
     def evaluate(ratings: pd.DataFrame) -> dict[str, float]:
-        from surprise import Dataset, Reader, SVD, accuracy
-        from surprise.model_selection import train_test_split
+        from surprise import Dataset, Reader, SVD
+        from surprise.model_selection import KFold, cross_validate
 
         reader = Reader(rating_scale=(0.5, 5.0))
         data = Dataset.load_from_df(ratings[["user_id", "movie_id", "rating"]], reader)
-        trainset, testset = train_test_split(data, test_size=0.2, random_state=42)
-        model = SVD(n_factors=80, n_epochs=25, lr_all=0.005, reg_all=0.04, random_state=42)
-        model.fit(trainset)
-        predictions = model.test(testset)
+        splitter = KFold(n_splits=5, random_state=RANDOM_STATE, shuffle=True)
+        scores = cross_validate(SVD(**SVD_PARAMS), data, measures=["RMSE", "MAE"], cv=splitter, verbose=False)
         return {
-            "rmse": accuracy.rmse(predictions, verbose=False),
-            "mae": accuracy.mae(predictions, verbose=False),
-            "test_size": float(len(testset)),
+            "rmse_mean": float(np.mean(scores["test_rmse"])),
+            "rmse_std": float(np.std(scores["test_rmse"])),
+            "mae_mean": float(np.mean(scores["test_mae"])),
+            "mae_std": float(np.std(scores["test_mae"])),
+            "folds": 5.0,
         }
 
     def recommend_for_user(
@@ -190,7 +211,7 @@ class CollaborativeRecommender:
 class HybridRecommender:
     content: ContentBasedRecommender
     collaborative: CollaborativeRecommender
-    alpha: float = 0.6
+    alpha: float = 0.2
 
     def recommend_for_user(
         self,
@@ -258,13 +279,13 @@ def evaluate_profile_recommender(
     selected_cases = []
     for index in selected:
         user_id, liked = eligible[int(index)]
-        selected_cases.append((user_id, liked[0], liked[1:]))
+        hidden_movie_id = int(rng.choice(liked))
+        profile_ids = [movie_id for movie_id in liked if movie_id != hidden_movie_id]
+        selected_cases.append((user_id, hidden_movie_id, profile_ids))
 
     if recommender is not None:
         hidden_pairs = {(user_id, hidden_movie_id) for user_id, hidden_movie_id, _profile_ids in selected_cases}
-        train_ratings = ratings[
-            ~ratings.apply(lambda row: (int(row["user_id"]), int(row["movie_id"])) in hidden_pairs, axis=1)
-        ].copy()
+        train_ratings = remove_hidden_ratings(ratings, hidden_pairs)
         eval_collaborative = CollaborativeRecommender.fit(train_ratings)
         eval_recommender = HybridRecommender(content, eval_collaborative, alpha=recommender.alpha)
     else:
@@ -304,14 +325,18 @@ def evaluate_sampled_topn(
     sample_users: int = 100,
     negative_samples: int = 100,
     top_n: int = 10,
-    alpha: float = 0.6,
+    alpha: float = 0.2,
 ) -> dict[str, dict[str, float]]:
     eligible = []
     candidate_ids = set(candidates["movie_id"].astype(int))
     all_candidate_ids = np.array(sorted(candidate_ids))
 
     for user_id, group in ratings.groupby("user_id"):
-        liked = [movie_id for movie_id in group.loc[group["rating"] >= 4.0, "movie_id"].astype(int) if movie_id in candidate_ids]
+        liked = [
+            movie_id
+            for movie_id in group.loc[group["rating"] >= 4.0, "movie_id"].astype(int)
+            if movie_id in candidate_ids
+        ]
         if len(group) >= 10 and len(liked) >= 2:
             eligible.append((int(user_id), liked, set(group["movie_id"].astype(int))))
 
@@ -320,9 +345,13 @@ def evaluate_sampled_topn(
     selected_cases = []
     for index in selected:
         user_id, liked, rated_ids = eligible[int(index)]
-        hidden_movie_id = liked[0]
-        profile_ids = liked[1:]
-        negative_pool = [movie_id for movie_id in all_candidate_ids if movie_id not in rated_ids and movie_id != hidden_movie_id]
+        hidden_movie_id = int(rng.choice(liked))
+        profile_ids = [movie_id for movie_id in liked if movie_id != hidden_movie_id]
+        negative_pool = [
+            movie_id
+            for movie_id in all_candidate_ids
+            if movie_id not in rated_ids and movie_id != hidden_movie_id
+        ]
         if len(negative_pool) < negative_samples:
             sampled_negatives = negative_pool
         else:
@@ -330,10 +359,11 @@ def evaluate_sampled_topn(
         eval_ids = sampled_negatives + [hidden_movie_id]
         selected_cases.append((user_id, hidden_movie_id, profile_ids, eval_ids))
 
-    hidden_pairs = {(user_id, hidden_movie_id) for user_id, hidden_movie_id, _profile_ids, _eval_ids in selected_cases}
-    train_ratings = ratings[
-        ~ratings.apply(lambda row: (int(row["user_id"]), int(row["movie_id"])) in hidden_pairs, axis=1)
-    ].copy()
+    hidden_pairs = {
+        (user_id, hidden_movie_id)
+        for user_id, hidden_movie_id, _profile_ids, _eval_ids in selected_cases
+    }
+    train_ratings = remove_hidden_ratings(ratings, hidden_pairs)
     eval_collaborative = CollaborativeRecommender.fit(train_ratings)
 
     metrics = {
@@ -404,7 +434,7 @@ def build_demo(database_url: str, user_id: int, seed_movie_id: int, top_n: int) 
     content = ContentBasedRecommender.fit(movies)
     collaborative_metrics = CollaborativeRecommender.evaluate(ratings)
     collaborative = CollaborativeRecommender.fit(ratings)
-    hybrid = HybridRecommender(content, collaborative, alpha=0.6)
+    hybrid = HybridRecommender(content, collaborative, alpha=0.2)
 
     content_recs = content.similar_movies(seed_movie_id, top_n=top_n)
     collaborative_recs = collaborative.recommend_for_user(user_id, movies, candidates, top_n=top_n)

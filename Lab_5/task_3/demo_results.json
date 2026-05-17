@@ -12,12 +12,14 @@
   },
   "metrics": {
     "collaborative": {
-      "rmse": 0.8901539036148486,
-      "mae": 0.68667258234394,
-      "test_size": 19962.0
+      "rmse_mean": 0.8876806588635635,
+      "rmse_std": 0.003560492965483087,
+      "mae_mean": 0.6832785863163668,
+      "mae_std": 0.002302069502042253,
+      "folds": 5.0
     },
     "full_catalog_content_based": {
-      "hit_rate_at_10": 0.02,
+      "hit_rate_at_10": 0.06,
       "evaluated_users": 50.0
     },
     "full_catalog_hybrid": {
@@ -26,26 +28,26 @@
     },
     "sampled_topn": {
       "content_based": {
-        "hit_rate_at_10": 0.32,
-        "precision_at_10": 0.032,
-        "recall_at_10": 0.32,
-        "ndcg_at_10": 0.1658077063279859,
+        "hit_rate_at_10": 0.35,
+        "precision_at_10": 0.034999999999999996,
+        "recall_at_10": 0.35,
+        "ndcg_at_10": 0.2113170416119074,
         "evaluated_users": 100.0,
         "negative_samples": 100.0
       },
       "collaborative": {
-        "hit_rate_at_10": 0.14,
-        "precision_at_10": 0.014000000000000002,
-        "recall_at_10": 0.14,
-        "ndcg_at_10": 0.06736900672011785,
+        "hit_rate_at_10": 0.17,
+        "precision_at_10": 0.017,
+        "recall_at_10": 0.17,
+        "ndcg_at_10": 0.08138635585950327,
         "evaluated_users": 100.0,
         "negative_samples": 100.0
       },
       "hybrid": {
-        "hit_rate_at_10": 0.33,
-        "precision_at_10": 0.033,
-        "recall_at_10": 0.33,
-        "ndcg_at_10": 0.17088566617039092,
+        "hit_rate_at_10": 0.38,
+        "precision_at_10": 0.038,
+        "recall_at_10": 0.38,
+        "ndcg_at_10": 0.22361625099314866,
         "evaluated_users": 100.0,
         "negative_samples": 100.0
       }
@@ -218,6 +220,16 @@
     ],
     "hybrid": [
       {
+        "movie_id": 2991,
+        "title": "Live and Let Die",
+        "year": 1973,
+        "vote_average": 6.4,
+        "vote_count": 540,
+        "predicted_rating": 2.3228129508937627,
+        "content_score": 0.19887952454923524,
+        "hybrid_score": 0.9086293786395179
+      },
+      {
         "movie_id": 1086,
         "title": "Dial M for Murder",
         "year": 1954,
@@ -225,17 +237,7 @@
         "vote_count": 539,
         "predicted_rating": 3.1269392215982847,
         "content_score": 0.18092648117340202,
-        "hybrid_score": 0.8683055615525663
-      },
-      {
-        "movie_id": 5782,
-        "title": "The Professional",
-        "year": 1981,
-        "vote_average": 7.1,
-        "vote_count": 71,
-        "predicted_rating": 3.3619661779811136,
-        "content_score": 0.12983319637033988,
-        "hybrid_score": 0.8008775257266626
+        "hybrid_score": 0.8849274786759027
       },
       {
         "movie_id": 915,
@@ -245,47 +247,7 @@
         "vote_count": 284,
         "predicted_rating": 2.8916100983004647,
         "content_score": 0.16562679751473675,
-        "hybrid_score": 0.7777361123194899
-      },
-      {
-        "movie_id": 1354,
-        "title": "Breaking the Waves",
-        "year": 1996,
-        "vote_average": 7.2,
-        "vote_count": 213,
-        "predicted_rating": 3.5134898591269357,
-        "content_score": 0.10305764294768822,
-        "hybrid_score": 0.7720699802822635
-      },
-      {
-        "movie_id": 1090,
-        "title": "Platoon",
-        "year": 1986,
-        "vote_average": 7.5,
-        "vote_count": 1236,
-        "predicted_rating": 3.2841674771934053,
-        "content_score": 0.11484353416274029,
-        "hybrid_score": 0.7473114096851264
-      },
-      {
-        "movie_id": 928,
-        "title": "Rebecca",
-        "year": 1940,
-        "vote_average": 7.7,
-        "vote_count": 346,
-        "predicted_rating": 3.028731925987363,
-        "content_score": 0.1320374162702105,
-        "hybrid_score": 0.7294050957244356
-      },
-      {
-        "movie_id": 2991,
-        "title": "Live and Let Die",
-        "year": 1973,
-        "vote_average": 6.4,
-        "vote_count": 540,
-        "predicted_rating": 2.3228129508937627,
-        "content_score": 0.19887952454923524,
-        "hybrid_score": 0.7258881359185538
+        "hybrid_score": 0.794082462921585
       },
       {
         "movie_id": 1253,
@@ -295,17 +257,37 @@
         "vote_count": 323,
         "predicted_rating": 2.793460838538629,
         "content_score": 0.15293778450372103,
-        "hybrid_score": 0.724957507741574
+        "hybrid_score": 0.7261843315075804
       },
       {
-        "movie_id": 898,
-        "title": "The Philadelphia Story",
-        "year": 1940,
-        "vote_average": 7.7,
-        "vote_count": 196,
-        "predicted_rating": 3.2575275145801963,
-        "content_score": 0.1068370516534606,
-        "hybrid_score": 0.7221335912300674
+        "movie_id": 2118,
+        "title": "The Dead Zone",
+        "year": 1983,
+        "vote_average": 6.9,
+        "vote_count": 320,
+        "predicted_rating": 2.6326479891699344,
+        "content_score": 0.15202370792127376,
+        "hybrid_score": 0.7094952138752665
+      },
+      {
+        "movie_id": 1965,
+        "title": "Repo Man",
+        "year": 1984,
+        "vote_average": 6.7,
+        "vote_count": 146,
+        "predicted_rating": 2.7383611683567257,
+        "content_score": 0.14931622835307154,
+        "hybrid_score": 0.7047269932800364
+      },
+      {
+        "movie_id": 538,
+        "title": "Six Degrees of Separation",
+        "year": 1993,
+        "vote_average": 6.5,
+        "vote_count": 75,
+        "predicted_rating": 2.564894715450299,
+        "content_score": 0.15015746180419196,
+        "hybrid_score": 0.6954175159280805
       },
       {
         "movie_id": 671,
@@ -315,7 +297,27 @@
         "vote_count": 71,
         "predicted_rating": 2.8854079993663655,
         "content_score": 0.14258970863169818,
-        "hybrid_score": 0.7215103300824675
+        "hybrid_score": 0.6840105936840453
+      },
+      {
+        "movie_id": 3686,
+        "title": "Flatliners",
+        "year": 1990,
+        "vote_average": 6.3,
+        "vote_count": 413,
+        "predicted_rating": 2.412198555632902,
+        "content_score": 0.14612838764805414,
+        "hybrid_score": 0.6645320673528335
+      },
+      {
+        "movie_id": 5782,
+        "title": "The Professional",
+        "year": 1981,
+        "vote_average": 7.1,
+        "vote_count": 71,
+        "predicted_rating": 3.3619661779811136,
+        "content_score": 0.12983319637033988,
+        "hybrid_score": 0.6598934633154709
       }
     ]
   }
