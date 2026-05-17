@@ -1,0 +1,296 @@
+{
+  "dataset": {
+    "movies": 9082,
+    "ratings": 99810,
+    "users": 671,
+    "candidates_with_20_ratings": 1300
+  },
+  "parameters": {
+    "user_id": 15,
+    "seed_movie_id": 318,
+    "top_n": 10
+  },
+  "metrics": {
+    "collaborative": {
+      "rmse": 0.8901539036148486,
+      "mae": 0.68667258234394,
+      "test_size": 19962.0
+    },
+    "content_based": {
+      "hit_rate_at_10": 0.02,
+      "evaluated_users": 50.0
+    },
+    "hybrid": {
+      "hit_rate_at_10": 0.06,
+      "evaluated_users": 50.0
+    }
+  },
+  "recommendations": {
+    "content_based": [
+      {
+        "movie_id": 4830,
+        "title": "Brubaker",
+        "year": 1980,
+        "vote_average": 7.1,
+        "vote_count": 98,
+        "content_score": 0.26879299258212924
+      },
+      {
+        "movie_id": 1276,
+        "title": "Cool Hand Luke",
+        "year": 1967,
+        "vote_average": 7.7,
+        "vote_count": 390,
+        "content_score": 0.18737643512030636
+      },
+      {
+        "movie_id": 2881,
+        "title": "Double Jeopardy",
+        "year": 1999,
+        "vote_average": 6.2,
+        "vote_count": 282,
+        "content_score": 0.17994587079335786
+      },
+      {
+        "movie_id": 504,
+        "title": "No Escape",
+        "year": 1994,
+        "vote_average": 6.1,
+        "vote_count": 86,
+        "content_score": 0.17597616429544874
+      },
+      {
+        "movie_id": 110110,
+        "title": "Starred Up",
+        "year": 2013,
+        "vote_average": 7.1,
+        "vote_count": 324,
+        "content_score": 0.17153108289254526
+      },
+      {
+        "movie_id": 120783,
+        "title": "Son of a Gun",
+        "year": 2014,
+        "vote_average": 6.1,
+        "vote_count": 284,
+        "content_score": 0.1667313932639815
+      },
+      {
+        "movie_id": 62331,
+        "title": "Dead Leaves",
+        "year": 2004,
+        "vote_average": 7.4,
+        "vote_count": 27,
+        "content_score": 0.16155330912991323
+      },
+      {
+        "movie_id": 3147,
+        "title": "The Green Mile",
+        "year": 1999,
+        "vote_average": 8.2,
+        "vote_count": 4166,
+        "content_score": 0.15962662338810538
+      },
+      {
+        "movie_id": 3198,
+        "title": "Papillon",
+        "year": 1973,
+        "vote_average": 7.8,
+        "vote_count": 445,
+        "content_score": 0.15956686284933425
+      },
+      {
+        "movie_id": 2344,
+        "title": "Runaway Train",
+        "year": 1985,
+        "vote_average": 7.0,
+        "vote_count": 129,
+        "content_score": 0.15852066050781935
+      }
+    ],
+    "collaborative": [
+      {
+        "movie_id": 1354,
+        "title": "Breaking the Waves",
+        "year": 1996,
+        "vote_average": 7.2,
+        "vote_count": 213,
+        "predicted_rating": 3.5134898591269357
+      },
+      {
+        "movie_id": 1172,
+        "title": "Cinema Paradiso",
+        "year": 1988,
+        "vote_average": 8.2,
+        "vote_count": 834,
+        "predicted_rating": 3.419200051972993
+      },
+      {
+        "movie_id": 5782,
+        "title": "The Professional",
+        "year": 1981,
+        "vote_average": 7.1,
+        "vote_count": 71,
+        "predicted_rating": 3.3619661779811136
+      },
+      {
+        "movie_id": 31658,
+        "title": "Howl's Moving Castle",
+        "year": 2004,
+        "vote_average": 8.2,
+        "vote_count": 2049,
+        "predicted_rating": 3.3599261634006488
+      },
+      {
+        "movie_id": 905,
+        "title": "It Happened One Night",
+        "year": 1934,
+        "vote_average": 7.7,
+        "vote_count": 283,
+        "predicted_rating": 3.3142431890858237
+      },
+      {
+        "movie_id": 1227,
+        "title": "Once Upon a Time in America",
+        "year": 1984,
+        "vote_average": 8.3,
+        "vote_count": 1104,
+        "predicted_rating": 3.30162000481095
+      },
+      {
+        "movie_id": 969,
+        "title": "The African Queen",
+        "year": 1951,
+        "vote_average": 7.4,
+        "vote_count": 232,
+        "predicted_rating": 3.295627627666336
+      },
+      {
+        "movie_id": 968,
+        "title": "Night of the Living Dead",
+        "year": 1968,
+        "vote_average": 7.5,
+        "vote_count": 591,
+        "predicted_rating": 3.294780200248174
+      },
+      {
+        "movie_id": 1090,
+        "title": "Platoon",
+        "year": 1986,
+        "vote_average": 7.5,
+        "vote_count": 1236,
+        "predicted_rating": 3.2841674771934053
+      },
+      {
+        "movie_id": 69844,
+        "title": "Harry Potter and the Half-Blood Prince",
+        "year": 2009,
+        "vote_average": 7.4,
+        "vote_count": 5435,
+        "predicted_rating": 3.2796831344912385
+      }
+    ],
+    "hybrid": [
+      {
+        "movie_id": 1086,
+        "title": "Dial M for Murder",
+        "year": 1954,
+        "vote_average": 7.9,
+        "vote_count": 539,
+        "predicted_rating": 3.1269392215982847,
+        "content_score": 0.18092648117340202,
+        "hybrid_score": 0.8683055615525663
+      },
+      {
+        "movie_id": 5782,
+        "title": "The Professional",
+        "year": 1981,
+        "vote_average": 7.1,
+        "vote_count": 71,
+        "predicted_rating": 3.3619661779811136,
+        "content_score": 0.12983319637033988,
+        "hybrid_score": 0.8008775257266626
+      },
+      {
+        "movie_id": 915,
+        "title": "Sabrina",
+        "year": 1954,
+        "vote_average": 7.4,
+        "vote_count": 284,
+        "predicted_rating": 2.8916100983004647,
+        "content_score": 0.16562679751473675,
+        "hybrid_score": 0.7777361123194899
+      },
+      {
+        "movie_id": 1354,
+        "title": "Breaking the Waves",
+        "year": 1996,
+        "vote_average": 7.2,
+        "vote_count": 213,
+        "predicted_rating": 3.5134898591269357,
+        "content_score": 0.10305764294768822,
+        "hybrid_score": 0.7720699802822635
+      },
+      {
+        "movie_id": 1090,
+        "title": "Platoon",
+        "year": 1986,
+        "vote_average": 7.5,
+        "vote_count": 1236,
+        "predicted_rating": 3.2841674771934053,
+        "content_score": 0.11484353416274029,
+        "hybrid_score": 0.7473114096851264
+      },
+      {
+        "movie_id": 928,
+        "title": "Rebecca",
+        "year": 1940,
+        "vote_average": 7.7,
+        "vote_count": 346,
+        "predicted_rating": 3.028731925987363,
+        "content_score": 0.1320374162702105,
+        "hybrid_score": 0.7294050957244356
+      },
+      {
+        "movie_id": 2991,
+        "title": "Live and Let Die",
+        "year": 1973,
+        "vote_average": 6.4,
+        "vote_count": 540,
+        "predicted_rating": 2.3228129508937627,
+        "content_score": 0.19887952454923524,
+        "hybrid_score": 0.7258881359185538
+      },
+      {
+        "movie_id": 1253,
+        "title": "The Day the Earth Stood Still",
+        "year": 1951,
+        "vote_average": 7.3,
+        "vote_count": 323,
+        "predicted_rating": 2.793460838538629,
+        "content_score": 0.15293778450372103,
+        "hybrid_score": 0.724957507741574
+      },
+      {
+        "movie_id": 898,
+        "title": "The Philadelphia Story",
+        "year": 1940,
+        "vote_average": 7.7,
+        "vote_count": 196,
+        "predicted_rating": 3.2575275145801963,
+        "content_score": 0.1068370516534606,
+        "hybrid_score": 0.7221335912300674
+      },
+      {
+        "movie_id": 671,
+        "title": "Mystery Science Theater 3000: The Movie",
+        "year": 1996,
+        "vote_average": 7.0,
+        "vote_count": 71,
+        "predicted_rating": 2.8854079993663655,
+        "content_score": 0.14258970863169818,
+        "hybrid_score": 0.7215103300824675
+      }
+    ]
+  }
+}
