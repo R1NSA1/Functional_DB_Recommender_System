@@ -11,4 +11,14 @@ wheels/
 recsys-venv/
 
 # Local datasets
+datasets/
 Lab_5/datasets/
+
+# Other local course materials kept outside this Lab 5 repository
+Lab_1/
+Lab_2/
+Lab_3/
+Lab_3_test/
+Lab_4/
+Lab_3.zip
+Рексис_(2) (1).ipynb
