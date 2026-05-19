@@ -1,0 +1,41 @@
+{
+  "timestamp": "2026-05-19T19:32:54.983634",
+  "solutions": {
+    "new_user_popular": [
+      {"title": "Inception", "rating": 8.1, "votes": 14075},
+      {"title": "The Dark Knight", "rating": 8.3, "votes": 12269},
+      {"title": "Avatar", "rating": 7.2, "votes": 12114},
+      {"title": "The Avengers", "rating": 7.4, "votes": 12000},
+      {"title": "Deadpool", "rating": 7.4, "votes": 11444},
+      {"title": "Interstellar", "rating": 8.1, "votes": 11187},
+      {"title": "Django Unchained", "rating": 7.8, "votes": 10297},
+      {"title": "Guardians of the Galaxy", "rating": 7.9, "votes": 10014},
+      {"title": "Fight Club", "rating": 8.3, "votes": 9678},
+      {"title": "The Hunger Games", "rating": 6.9, "votes": 9634}
+    ],
+    "new_user_by_genres": [
+      {"title": "The Empire Strikes Back", "rating": 8.2, "genre_match": 2},
+      {"title": "Inception", "rating": 8.1, "genre_match": 2},
+      {"title": "Star Wars", "rating": 8.1, "genre_match": 2},
+      {"title": "The Matrix", "rating": 7.9, "genre_match": 2},
+      {"title": "Return of the Jedi", "rating": 7.9, "genre_match": 2},
+      {"title": "Guardians of the Galaxy", "rating": 7.9, "genre_match": 2},
+      {"title": "Alien", "rating": 7.9, "genre_match": 2},
+      {"title": "Dr. Horrible's Sing-Along Blog", "rating": 7.8, "genre_match": 2},
+      {"title": "Ghost in the Shell", "rating": 7.8, "genre_match": 2},
+      {"title": "Evangelion: 2.0 You Can (Not) Advance", "rating": 7.7, "genre_match": 2}
+    ],
+    "similar_for_new_movie": [
+      {"title": "Star Wars", "rating": 8.1, "ratings_count": 582},
+      {"title": "The Matrix", "rating": 7.9, "ratings_count": 518},
+      {"title": "Terminator 2: Judgment Day", "rating": 7.7, "ratings_count": 474},
+      {"title": "The Empire Strikes Back", "rating": 8.2, "ratings_count": 468},
+      {"title": "Independence Day", "rating": 6.7, "ratings_count": 436},
+      {"title": "Return of the Jedi", "rating": 7.9, "ratings_count": 434},
+      {"title": "Men in Black", "rating": 6.9, "ratings_count": 380},
+      {"title": "The Terminator", "rating": 7.4, "ratings_count": 316},
+      {"title": "Stargate", "rating": 6.8, "ratings_count": 290},
+      {"title": "Star Wars: Episode I - The Phantom Menace", "rating": 6.4, "ratings_count": 276}
+    ]
+  }
+}
